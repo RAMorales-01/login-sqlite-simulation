@@ -15,30 +15,94 @@ namespace UserLogin
 
         static void Main(string[] args)
         {
-            VerifyDatabaseIsCreated();
+            Console.Clear();
+            Console.WriteLine("The next program is a test to simulate a login process.");
+            Console.WriteLine("the user can choose to create a new username and password or use the default credentials.");
+            Console.WriteLine("\nPress any key to begin.");
+            Console.ReadKey();
 
-            Console.WriteLine("--- User Login ---");
-            Console.Write("Enter username: ");
-            string username = Console.ReadLine();
-            Console.Write("Enter password: ");
-            string password = Console.ReadLine();
+            bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
 
-            if(ValidateUser(username, password))
+            if(hasAccount == true)
             {
-                Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
+                Console.WriteLine("\nNOTE: default credentials are - username: admin, password: password123");
+                Console.WriteLine("\nUnderstood, then let's continue. Press any key to proceed to the login page.\n");
+                VerifyDatabaseIsCreated(hasAccount);
+
+                Console.WriteLine("--- User Login ---");
+                Console.Write("Enter username: ");
+                string username = Console.ReadLine();
+                Console.Write("Enter password: ");
+                string password = Console.ReadLine();
+
+                if(ValidateUser(username, password))
+                {
+                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
+                }
+                else
+                {
+                    Console.Write("\nLogin Denied. Invalid username or password.");
+                }
             }
             else
             {
-                Console.Write("\nLogin Denied. Invalid username or password.");
-            }
+                VerifyDatabaseIsCreated(hasAccount);
 
+                Console.WriteLine("--- User Login ---");
+                Console.Write("Enter username: ");
+                string username = Console.ReadLine();
+                Console.Write("Enter password: ");
+                string password = Console.ReadLine();
+
+                if(ValidateUser(username, password))
+                {
+                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
+                }
+                else
+                {
+                    Console.Write("\nLogin Denied. Invalid username or password.");
+                }
+            }
+            
             //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
+        }
+
+        ///<summary>
+        ///Verfies if user has an account already or wants to create a new account.
+        ///</summary>
+        ///<param name="prompt1">ask user for existing credentials</param>
+        ///<param name="prompt2">ask for the input if yes or no</param>
+        ///<returns>bool, true if wants to use existing credentials, false if wants to create new credentials</returns>
+        private static bool IsRegisteredAlready(string prompt1, string prompt2)
+        {
+            while(true)
+            {
+                Console.Clear();
+                Console.WriteLine("Welcome!");
+                Console.WriteLine(prompt1);
+                Console.Write(prompt2);
+                string input = Console.ReadLine().ToLower();
+
+                if(string.Equals(input, "y", StringComparison.OrdinalIgnoreCase) || string.Equals(input, "yes", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                else if(string.Equals(input, "n", StringComparison.OrdinalIgnoreCase) || string.Equals(input, "no", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+                else
+                {
+                    Console.WriteLine("\nERROR: Invalid input, expected 'y' for yes or 'n' for no. Press any key to try again.\n");
+                    Console.ReadKey();
+                }
+            }
         }
 
         ///<summary>
         ///Ensures the database and folder exist
         ///</summary>
-        private static void VerifyDatabaseIsCreated()
+        private static void VerifyDatabaseIsCreated(bool hasAccount)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(databaseFilePath));//Checks the path for the database exists
 
@@ -49,7 +113,14 @@ namespace UserLogin
                 command.CommandText = @"CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL UNIQUE, PasswordHash TEXT NOT NULL);";
                 command.ExecuteNonQuery();//finally we use one of the execute methods ExecuteNonQuery(), ExecuteScalar(), or ExecuteReader()
 
-                AddDefaultUser(connection);
+                if(hasAccount == true)
+                {
+                    AddDefaultUser(connection); 
+                } 
+                else
+                {
+                    CreateNewUser(connection);
+                }
             }
         }
 
@@ -92,6 +163,47 @@ namespace UserLogin
                 insertCommand.Parameters.AddWithValue("@hash", "password123");
                 insertCommand.ExecuteNonQuery();
                 Console.WriteLine("Use default user 'admin' created with password 'password123'.");
+            }
+        }
+
+        ///<summary>
+        ///Let user add credentials to the database, username and password
+        ///</summary>
+        private static void CreateNewUser(SqliteConnection connection)
+        {
+            string username = CreateCredential("Enter username: ");
+            string password = CreateCredential("Enter password: ");
+
+            SqliteCommand addUserCommand = connection.CreateCommand();
+            addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+            addUserCommand.Parameters.AddWithValue("@user", username);
+            addUserCommand.Parameters.AddWithValue("@hash", password);
+            addUserCommand.ExecuteNonQuery();
+        }
+
+        ///<summary>
+        ///Takes the input for the creation for: username and password
+        ///</summary>
+        ///<param name="prompt">prompts user for creation of username or password</param>
+        ///<returns>string between 6 and 12 characters of the new username or password</returns> 
+        private static string CreateCredential(string prompt)
+        {
+            while(true)
+            {
+                Console.Clear();
+                Console.WriteLine("NOTE: username and password must have a minimum of 6 and a maximum of 12 characters.");
+                Console.Write(prompt);
+                string userInput = Console.ReadLine();
+
+                if(userInput.Length < 6 || userInput.Length > 12)
+                {
+                    Console.WriteLine("\nERROR: invalid input, expected string between 6 and 12 characters. Press any key to try again.");
+                    Console.ReadKey();
+                }
+                else
+                {
+                    return userInput;
+                }
             }
         }
     }
