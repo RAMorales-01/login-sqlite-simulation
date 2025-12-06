@@ -41,3 +41,4 @@ C:\Users\ruben\desktop\practice\userLoginWithDatabase\obj\Debug\net9.0\refint\us
 C:\Users\ruben\desktop\practice\userLoginWithDatabase\obj\Debug\net9.0\userLoginWithDatabase.pdb
 C:\Users\ruben\desktop\practice\userLoginWithDatabase\obj\Debug\net9.0\userLoginWithDatabase.genruntimeconfig.cache
 C:\Users\ruben\desktop\practice\userLoginWithDatabase\obj\Debug\net9.0\ref\userLoginWithDatabase.dll
+C:\Users\ruben\desktop\practice\userLoginWithDatabase\obj\Debug\net9.0\userLoginWithDatabase.sourcelink.json
