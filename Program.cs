@@ -21,19 +21,33 @@ namespace UserLogin
             Console.WriteLine("\nPress any key to begin.");
             Console.ReadKey();
 
-            bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
-            VerifyDatabaseIsCreated(hasAccount);
-            var credentials = CredentialsInput("--- User Login ---");
-            
-            if(ValidateUser(credentials.username, credentials.password))
+            try
             {
-                Console.Clear();
-                Console.WriteLine($"Access granted!, welcome {credentials.username}.\n");
+                bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
+                VerifyDatabaseIsCreated(hasAccount);
+                var credentials = CredentialsInput("--- User Login ---");
+
+                if(ValidateUser(credentials.username, credentials.password))
+                {
+                    Console.Clear();
+                    Console.WriteLine($"Access granted!, welcome {credentials.username}.\n");
+                }
+                else
+                {
+                    Console.Clear();
+                    Console.WriteLine("Access denied, please contact an Administrator for more information.\n");
+                }
             }
-            else
+            catch(Microsoft.Data.Sqlite.SqliteException ex)
             {
-                Console.Clear();
-                Console.WriteLine("Access denied, please contact an Administrator for more information.\n");
+                if(ex.SqliteErrorCode == 19)
+                {
+                    Console.WriteLine("\nError: The provided username violates a unique constraint. Username already exist in database.\n");
+                }
+                else
+                {
+                    throw;
+                }
             }
             
             //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
@@ -134,7 +148,6 @@ namespace UserLogin
                 insertCommand.Parameters.AddWithValue("@user", "admin");
                 insertCommand.Parameters.AddWithValue("@hash", "password123");
                 insertCommand.ExecuteNonQuery();
-                Console.WriteLine("Use default user 'admin' created with password 'password123'.");
             }
         }
 

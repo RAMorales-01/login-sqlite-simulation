@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("userLoginWithDatabase")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0517f051bf82731dcb5e2f2095f5978c07c72949")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+177b4f110a01c4b6803e650c771231d17447a2b4")]
 [assembly: System.Reflection.AssemblyProductAttribute("userLoginWithDatabase")]
 [assembly: System.Reflection.AssemblyTitleAttribute("userLoginWithDatabase")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
