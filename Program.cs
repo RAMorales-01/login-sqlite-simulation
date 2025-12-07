@@ -22,46 +22,18 @@ namespace UserLogin
             Console.ReadKey();
 
             bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
-
-            if(hasAccount == true)
+            VerifyDatabaseIsCreated(hasAccount);
+            var credentials = CredentialsInput("--- User Login ---");
+            
+            if(ValidateUser(credentials.username, credentials.password))
             {
-                Console.WriteLine("\nNOTE: default credentials are - username: admin, password: password123");
-                Console.WriteLine("\nUnderstood, then let's continue. Press any key to proceed to the login page.\n");
-                VerifyDatabaseIsCreated(hasAccount);
-
-                Console.WriteLine("--- User Login ---");
-                Console.Write("Enter username: ");
-                string username = Console.ReadLine();
-                Console.Write("Enter password: ");
-                string password = Console.ReadLine();
-
-                if(ValidateUser(username, password))
-                {
-                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
-                }
-                else
-                {
-                    Console.Write("\nLogin Denied. Invalid username or password.");
-                }
+                Console.Clear();
+                Console.WriteLine($"Access granted!, welcome {credentials.username}.\n");
             }
             else
             {
-                VerifyDatabaseIsCreated(hasAccount);
-
-                Console.WriteLine("--- User Login ---");
-                Console.Write("Enter username: ");
-                string username = Console.ReadLine();
-                Console.Write("Enter password: ");
-                string password = Console.ReadLine();
-
-                if(ValidateUser(username, password))
-                {
-                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
-                }
-                else
-                {
-                    Console.Write("\nLogin Denied. Invalid username or password.");
-                }
+                Console.Clear();
+                Console.WriteLine("Access denied, please contact an Administrator for more information.\n");
             }
             
             //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
@@ -205,6 +177,23 @@ namespace UserLogin
                     return userInput;
                 }
             }
+        }
+
+        ///<summary>
+        ///Ask user for input of the credentials
+        ///<summary>
+        ///<param name="prompt">informs user that is currently in the process for login</param>
+        ///<returns>tuple of strings, one for the username input and the other for password input</returns>
+        private static (string username, string password) CredentialsInput(string prompt)
+        {
+            Console.Clear();
+            Console.WriteLine(prompt);
+            Console.Write("Enter username: ");
+            string username = Console.ReadLine();
+            Console.Write("Enter password: ");
+            string password = Console.ReadLine();
+
+            return (username, password);
         }
     }
 }
