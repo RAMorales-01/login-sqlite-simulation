@@ -37,20 +37,13 @@ namespace UserLogin
                     Console.Clear();
                     Console.WriteLine("Access denied, please contact an Administrator for more information.\n");
                 }
+
+                //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
             }
-            catch(Microsoft.Data.Sqlite.SqliteException ex)
+            catch(Exception ex)
             {
-                if(ex.SqliteErrorCode == 19)
-                {
-                    Console.WriteLine("\nError: The provided username violates a unique constraint. Username already exist in database.\n");
-                }
-                else
-                {
-                    throw;
-                }
+                Console.WriteLine($"\nAn unexpected error occurred: {ex.Message}");
             }
-            
-            //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
         }
 
         ///<summary>
@@ -156,14 +149,39 @@ namespace UserLogin
         ///</summary>
         private static void CreateNewUser(SqliteConnection connection)
         {
-            string username = CreateCredential("Enter username: ");
-            string password = CreateCredential("Enter password: ");
+            while(true)
+            {
+                string username = CreateCredential("Enter username: ");
+                string password = CreateCredential("Enter password: ");
+                
+                try
+                {
+                    SqliteCommand addUserCommand = connection.CreateCommand();
+                    addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                    addUserCommand.Parameters.AddWithValue("@user", username);
+                    addUserCommand.Parameters.AddWithValue("@hash", password);
+                    addUserCommand.ExecuteNonQuery();
 
-            SqliteCommand addUserCommand = connection.CreateCommand();
-            addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
-            addUserCommand.Parameters.AddWithValue("@user", username);
-            addUserCommand.Parameters.AddWithValue("@hash", password);
-            addUserCommand.ExecuteNonQuery();
+                    Console.WriteLine("\nNew user succesfully created!. Press any key to continue login process.");
+                    Console.ReadKey();
+                    break;
+                }
+                catch(Microsoft.Data.Sqlite.SqliteException ex)
+                {
+                    if(ex.SqliteErrorCode == 19)
+                    {
+                        Console.Clear();
+                        Console.WriteLine($"\nERROR: The username '{username}' already exists.");
+                        Console.WriteLine("Please choose a different username. Press any key to try again.\n");
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+            
         }
 
         ///<summary>
