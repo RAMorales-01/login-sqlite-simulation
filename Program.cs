@@ -21,50 +21,29 @@ namespace UserLogin
             Console.WriteLine("\nPress any key to begin.");
             Console.ReadKey();
 
-            bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
-
-            if(hasAccount == true)
+            try
             {
-                Console.WriteLine("\nNOTE: default credentials are - username: admin, password: password123");
-                Console.WriteLine("\nUnderstood, then let's continue. Press any key to proceed to the login page.\n");
+                bool hasAccount = IsRegisteredAlready("Are you a registered user?", "Y/N: ");
                 VerifyDatabaseIsCreated(hasAccount);
+                var credentials = CredentialsInput("--- User Login ---");
 
-                Console.WriteLine("--- User Login ---");
-                Console.Write("Enter username: ");
-                string username = Console.ReadLine();
-                Console.Write("Enter password: ");
-                string password = Console.ReadLine();
-
-                if(ValidateUser(username, password))
+                if(ValidateUser(credentials.username, credentials.password))
                 {
-                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
+                    Console.Clear();
+                    Console.WriteLine($"Access granted!, welcome {credentials.username}.\n");
                 }
                 else
                 {
-                    Console.Write("\nLogin Denied. Invalid username or password.");
+                    Console.Clear();
+                    Console.WriteLine("Access denied, please contact an Administrator for more information.\n");
                 }
+
+                //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
             }
-            else
+            catch(Exception ex)
             {
-                VerifyDatabaseIsCreated(hasAccount);
-
-                Console.WriteLine("--- User Login ---");
-                Console.Write("Enter username: ");
-                string username = Console.ReadLine();
-                Console.Write("Enter password: ");
-                string password = Console.ReadLine();
-
-                if(ValidateUser(username, password))
-                {
-                    Console.WriteLine($"\nLogin Succesful. welcome {username}!.");
-                }
-                else
-                {
-                    Console.Write("\nLogin Denied. Invalid username or password.");
-                }
+                Console.WriteLine($"\nAn unexpected error occurred: {ex.Message}");
             }
-            
-            //TODO: Add a masking for the password, code to manage the Exceptions and new user registration.
         }
 
         ///<summary>
@@ -162,7 +141,6 @@ namespace UserLogin
                 insertCommand.Parameters.AddWithValue("@user", "admin");
                 insertCommand.Parameters.AddWithValue("@hash", "password123");
                 insertCommand.ExecuteNonQuery();
-                Console.WriteLine("Use default user 'admin' created with password 'password123'.");
             }
         }
 
@@ -171,14 +149,39 @@ namespace UserLogin
         ///</summary>
         private static void CreateNewUser(SqliteConnection connection)
         {
-            string username = CreateCredential("Enter username: ");
-            string password = CreateCredential("Enter password: ");
+            while(true)
+            {
+                string username = CreateCredential("Enter username: ");
+                string password = CreateCredential("Enter password: ");
+                
+                try
+                {
+                    SqliteCommand addUserCommand = connection.CreateCommand();
+                    addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                    addUserCommand.Parameters.AddWithValue("@user", username);
+                    addUserCommand.Parameters.AddWithValue("@hash", password);
+                    addUserCommand.ExecuteNonQuery();
 
-            SqliteCommand addUserCommand = connection.CreateCommand();
-            addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
-            addUserCommand.Parameters.AddWithValue("@user", username);
-            addUserCommand.Parameters.AddWithValue("@hash", password);
-            addUserCommand.ExecuteNonQuery();
+                    Console.WriteLine("\nNew user succesfully created!. Press any key to continue login process.");
+                    Console.ReadKey();
+                    break;
+                }
+                catch(Microsoft.Data.Sqlite.SqliteException ex)
+                {
+                    if(ex.SqliteErrorCode == 19)
+                    {
+                        Console.Clear();
+                        Console.WriteLine($"\nERROR: The username '{username}' already exists.");
+                        Console.WriteLine("Please choose a different username. Press any key to try again.\n");
+                        Console.ReadKey();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+            }
+            
         }
 
         ///<summary>
@@ -205,6 +208,23 @@ namespace UserLogin
                     return userInput;
                 }
             }
+        }
+
+        ///<summary>
+        ///Ask user for input of the credentials
+        ///<summary>
+        ///<param name="prompt">informs user that is currently in the process for login</param>
+        ///<returns>tuple of strings, one for the username input and the other for password input</returns>
+        private static (string username, string password) CredentialsInput(string prompt)
+        {
+            Console.Clear();
+            Console.WriteLine(prompt);
+            Console.Write("Enter username: ");
+            string username = Console.ReadLine();
+            Console.Write("Enter password: ");
+            string password = Console.ReadLine();
+
+            return (username, password);
         }
     }
 }
