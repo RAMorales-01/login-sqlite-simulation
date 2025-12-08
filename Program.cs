@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Microsoft.Data.Sqlite;
 using System.IO;
 
@@ -222,9 +223,38 @@ namespace UserLogin
             Console.Write("Enter username: ");
             string username = Console.ReadLine();
             Console.Write("Enter password: ");
-            string password = Console.ReadLine();
+            string password = MaskingPassword();
 
             return (username, password);
+        }
+
+        ///<summary>
+        ///Helper method to mask char input with '*' during password input
+        ///<summary>
+        ///<returns>string masked with char '*' to hide the password input</returns>
+        private static string MaskingPassword()
+        {
+            StringBuilder passInput = new StringBuilder();
+            ConsoleKeyInfo key; //saves all the info for the pressed key
+
+            do
+            {
+                key = Console.ReadKey(true);//to detect the input without showing what was pressed
+
+                if(key.Key != ConsoleKey.Enter && key.Key != ConsoleKey.Backspace && key.Key != ConsoleKey.Escape)
+                {
+                    passInput.Append(key.KeyChar);//adds character to pressed key
+                    Console.Write("*");//mask the pressed key during password input
+                }
+                else if(key.Key == ConsoleKey.Backspace && passInput.Length > 0)//to prevent backspace to be register as enter char during pass input
+                {
+                    passInput.Remove(passInput.Length - 1, 1);
+                    Console.Write("\b\b");
+                }
+            }
+            while(key.Key != ConsoleKey.Enter);
+
+            return passInput.ToString();
         }
     }
 }
