@@ -95,11 +95,11 @@ namespace UserLogin
 
                 if(hasAccount == true)
                 {
-                    AddDefaultUser(connection); 
+                    AddDefaultUser(); 
                 } 
                 else
                 {
-                    CreateNewUser(connection);
+                    CreateNewUser();
                 }
             }
         }
@@ -129,26 +129,31 @@ namespace UserLogin
         ///<summary>
         ///Default credentials in case user doesn't have credentials in the database
         ///</summary>
-        private static void AddDefaultUser(SqliteConnection connection)
+        private static void AddDefaultUser()
         {
-            SqliteCommand checkCommand = connection.CreateCommand();
-            checkCommand.CommandText = @"SELECT COUNT(*) FROM Users";
-            long userCount = (long)checkCommand.ExecuteScalar();
-
-            if(userCount == 0)
+            using(SqliteConnection connection = new SqliteConnection(connectionString))
             {
-                SqliteCommand insertCommand = connection.CreateCommand();
-                insertCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
-                insertCommand.Parameters.AddWithValue("@user", "admin");
-                insertCommand.Parameters.AddWithValue("@hash", "password123");
-                insertCommand.ExecuteNonQuery();
+                connection.Open();
+
+                SqliteCommand checkCommand = connection.CreateCommand();
+                checkCommand.CommandText = @"SELECT COUNT(*) FROM Users";
+                long userCount = (long)checkCommand.ExecuteScalar();
+
+                if(userCount == 0)
+                {
+                    SqliteCommand insertCommand = connection.CreateCommand();
+                    insertCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                    insertCommand.Parameters.AddWithValue("@user", "admin");
+                    insertCommand.Parameters.AddWithValue("@hash", "password123");
+                    insertCommand.ExecuteNonQuery();
+                }
             }
         }
 
         ///<summary>
         ///Let user add credentials to the database, username and password
         ///</summary>
-        private static void CreateNewUser(SqliteConnection connection)
+        private static void CreateNewUser()
         {
             while(true)
             {
@@ -157,11 +162,16 @@ namespace UserLogin
                 
                 try
                 {
-                    SqliteCommand addUserCommand = connection.CreateCommand();
-                    addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
-                    addUserCommand.Parameters.AddWithValue("@user", username);
-                    addUserCommand.Parameters.AddWithValue("@hash", password);
-                    addUserCommand.ExecuteNonQuery();
+                    using(SqliteConnection connection = new SqliteConnection(connectionString))
+                    {
+                        connection.Open();
+                        
+                        SqliteCommand addUserCommand = connection.CreateCommand();
+                        addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                        addUserCommand.Parameters.AddWithValue("@user", username);
+                        addUserCommand.Parameters.AddWithValue("@hash", password);
+                        addUserCommand.ExecuteNonQuery();
+                    }
 
                     Console.WriteLine("\nNew user succesfully created!. Press any key to continue login process.");
                     Console.ReadKey();
@@ -213,7 +223,7 @@ namespace UserLogin
 
         ///<summary>
         ///Ask user for input of the credentials
-        ///<summary>
+        ///</summary>
         ///<param name="prompt">informs user that is currently in the process for login</param>
         ///<returns>tuple of strings, one for the username input and the other for password input</returns>
         private static (string username, string password) CredentialsInput(string prompt)
@@ -230,7 +240,7 @@ namespace UserLogin
 
         ///<summary>
         ///Helper method to mask char input with '*' during password input
-        ///<summary>
+        ///</summary>
         ///<returns>string masked with char '*' to hide the password input</returns>
         private static string MaskingPassword()
         {
@@ -249,7 +259,7 @@ namespace UserLogin
                 else if(key.Key == ConsoleKey.Backspace && passInput.Length > 0)//to prevent backspace to be register as enter char during pass input
                 {
                     passInput.Remove(passInput.Length - 1, 1);
-                    Console.Write("\b\b");
+                    Console.Write("\b \b");
                 }
             }
             while(key.Key != ConsoleKey.Enter);
