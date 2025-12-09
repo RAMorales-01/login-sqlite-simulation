@@ -21,7 +21,7 @@ namespace UserLogin
             {
                 connection.Open();//then open the connection
                 SqliteCommand command = connection.CreateCommand();//Represents the SQL instruction and we use CommandText to assign the query 
-                command.CommandText = @"CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL UNIQUE, PasswordHash TEXT NOT NULL);";
+                command.CommandText = @"CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, Username TEXT NOT NULL UNIQUE, PasswordHash TEXT NOT NULL, PasswordSalt TEXT NOT NULL);";
                 command.ExecuteNonQuery();//finally we use one of the execute methods ExecuteNonQuery(), ExecuteScalar(), or ExecuteReader()
 
                 if(hasAccount == true)
@@ -50,10 +50,13 @@ namespace UserLogin
 
                 if(userCount == 0)
                 {
+                    var hashedPasswordInfo = HashSaltUtil.HashPassword("password123");
+
                     SqliteCommand insertCommand = connection.CreateCommand();
-                    insertCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                    insertCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash, PasswordSalt) VALUES (@user, @hash, @salt)";
                     insertCommand.Parameters.AddWithValue("@user", "admin");
-                    insertCommand.Parameters.AddWithValue("@hash", "password123");
+                    insertCommand.Parameters.AddWithValue("@hash", hashedPasswordInfo.hash);
+                    insertCommand.Parameters.AddWithValue("@salt", hashedPasswordInfo.salt);
                     insertCommand.ExecuteNonQuery();
                 }
             }
@@ -75,10 +78,13 @@ namespace UserLogin
                     {
                         connection.Open();
 
+                        var hashedPasswordInfo = HashSaltUtil.HashPassword(password);
+
                         SqliteCommand addUserCommand = connection.CreateCommand();
-                        addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash) VALUES (@user, @hash)";
+                        addUserCommand.CommandText = @"INSERT INTO Users (Username, PasswordHash, PasswordSalt) VALUES (@user, @hash, @salt)";
                         addUserCommand.Parameters.AddWithValue("@user", username);
-                        addUserCommand.Parameters.AddWithValue("@hash", password);
+                        addUserCommand.Parameters.AddWithValue("@hash", hashedPasswordInfo.hash);
+                        addUserCommand.Parameters.AddWithValue("@salt", hashedPasswordInfo.salt);
                         addUserCommand.ExecuteNonQuery();
                     }
 
@@ -116,13 +122,23 @@ namespace UserLogin
             {
                 connection.Open();
                 SqliteCommand command = connection.CreateCommand();
-                command.CommandText = @"SELECT COUNT(*) FROM Users WHERE Username = @user AND PasswordHash = @hash";
+                command.CommandText = @"SELECT PasswordHash, PasswordSalt FROM Users WHERE Username = @user";
                 command.Parameters.AddWithValue("@user", username);
-                command.Parameters.AddWithValue("@hash", password);
 
-                long count = (long)command.ExecuteScalar();
+                using(SqliteDataReader reader = command.ExecuteReader())
+                {
+                    if(reader.Read())
+                    {
+                        string storedHash = reader.GetString(0);//reads from CommandText --> PasswordHash
+                        string storedSalt = reader.GetString(1);//reads from CommandText --> PasswordSalt
 
-                return count > 0;
+                        return HashSaltUtil.VerifyPassword(password, storedHash, storedSalt);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
             }
         }
     }
